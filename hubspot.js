@@ -37,7 +37,7 @@ const hubspotClient = new Client({
 app.use(express.json());
 
 // Define a route to fetch data from HubSpot
-app.get("/hubspot-data", async (req, res) => {
+app.get("/hubspot-deal-get", async (req, res) => {
   try {
     let toQuoteArray = [];
     jobNumber = req.query.jobNumber;
@@ -84,6 +84,7 @@ app.get("/hubspot-data", async (req, res) => {
       toQuoteArray[i].trescoRepId = deals[i].properties.hubspot_owner_id;
       toQuoteArray[i].currency = deals[i].properties.deal_currency_code;
       toQuoteArray[i].dealName = deals[i].properties.dealname;
+      toQuoteArray[i].amount = deals[i].properties.amount;
     }
 
     for (let i in toQuoteArray) {
@@ -96,14 +97,19 @@ app.get("/hubspot-data", async (req, res) => {
   }
 });
 
-app.post("/hubspot-data", async (req, res) => {
+app.get("/hubspot-deal-amount", async (req, res) => {
   try {
     // Fetch a list of contacts as an example
-    const contactsResponse =
-      await hubspotClient.crm.contacts.basicApi.getPage();
-    const contacts = contactsResponse.results;
+    recordToUpdate = req.query.dealObjNum;
+    amount = req.query.amount;
+    amount = Math.round(+amount * 100) / 100;
 
-    res.json(contacts);
+    const apiResponse = await hubspotClient.crm.deals.basicApi.update(
+      recordToUpdate,
+      { properties: { amount } }
+    );
+
+    res.status(200).json({ success: true, data: apiResponse });
   } catch (error) {
     console.error("Error fetching HubSpot data:", error);
     res.status(500).json({ error: "Failed to fetch data from HubSpot" });
